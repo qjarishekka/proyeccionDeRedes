@@ -1,0 +1,52 @@
+---
+lang: ru
+format:
+  pdf:
+    documentclass: scrreprt
+    pdf-engine: xelatex
+    papersize: a4
+    fontsize: 12pt
+    mainfont: "DejaVu Serif"
+    sansfont: "DejaVu Sans"
+    monofont: "DejaVu Sans Mono"
+    geometry:
+      - top=25mm
+      - bottom=25mm
+      - left=25mm
+      - right=25mm
+    number-sections: true
+    toc: false
+    colorlinks: true
+    include-in-header:
+      text: |
+        \usepackage{float}
+        \setcounter{tocdepth}{2}
+        \setkomafont{disposition}{\normalfont\sffamily\bfseries}
+execute:
+  enabled: false
+---
+
+
+
+```{=latex}
+\begin{titlepage}
+\centering
+\vspace*{30mm}
+{\sffamily\bfseries\LARGE Отчет по лабораторной работе №1:\par}
+\vspace{5mm}
+{\sffamily\bfseries\Large Полнодоступная двухсервисная модель Эрланга с одинаковыми интенсивностями обслуживания\par}
+\vspace{8mm}
+{\sffamily\bfseries Дисциплина: Основы проектирования сетей и систем телекоммуникаций\par}
+\vspace{15mm}
+{\large Выполнил: Кхари Жекка Кализая Арсе, НПИбд-01-23\par}
+\end{titlepage}
+\tableofcontents
+\clearpage
+
+```
+
+# Численный анализ
+
+<!--  ![name](image/01.png){#fig-parametry width=90% fig-pos=H} -->
+
+
