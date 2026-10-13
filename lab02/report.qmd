@@ -20,6 +20,14 @@ format:
     include-in-header:
       text: |
         \usepackage{float}
+        \usepackage{fvextra}
+        \RecustomVerbatimEnvironment{Highlighting}{Verbatim}{
+          commandchars=\\\{\},
+          breaklines,
+          breaknonspaceingroup,
+          breakanywhere,
+          fontsize=\footnotesize
+        }
         \setcounter{tocdepth}{2}
         \setkomafont{disposition}{\normalfont\sffamily\bfseries}
 execute:
@@ -45,6 +53,7 @@ execute:
 
 ```
 
+
 # алгоритм расчета вероятностных характеристик модели
 
 1. читать/вводить/загрузить в памяти исходные данные 
@@ -68,10 +77,218 @@ $\sum_{n=0}^{C}p_n=1$
 
 # Численный анализ
 
+Для расчёта основных вероятностных характеристик модели были взяты [следующие параметры](#eq-input).
+
+$$ 
+C = 10, g = 3, \lambda_1 = 20, \lambda_2 = 30, \mu = 0.5
+$$ {#eq-input}
+
+Код написане на языке Python и выполнен в среде Visual Studio Code.
+
+![импортируем библиотеки](image/01.png){#fig-01 width=90% fig-pos=H}
+
+![задаем началные значения объекту model в файл test.py ](image/02.png){#fig-02 width=90% fig-pos=H}
+
+![функция инициализации класса IncompleteDualErlangModel](image/03.png){#fig-03 width=90% fig-pos=H}
+
+![функция рассчета вероятности $P_0$](image/04.png){#fig-04 width=90% fig-pos=H}
+
+![Функция рассчета стационарного распределения вероятностей состояний системы](image/05.png){#fig-05 width=90% fig-pos=H}
+
+![рассчета значения Вероятность блокировки по времени $E_1$ запроса на предоставление услуги 1-го типа](image/06.png){#fig-06 width=90% fig-pos=H}
+
+![рассчета значения Вероятность блокировки по времени $E_2$ запроса на предоставление услуги 2-го типа](image/07.png){#fig-07 width=90% fig-pos=H}
+
+![рассчет среднего числа запросов в системе](image/08.png){#fig-08 width=90% fig-pos=H}
+
+![функция вывода вероятностных характеристик модели](image/09.png){#fig-09 width=90% fig-pos=H}
+
+![функция построения графика зависимости вероятности блокировки от интенсивности предложенной нагрузки, создаваемой запросами первого типа](image/10.png){#fig-10 width=90% fig-pos=H}
+
+![функция Построения графика зависимости среднего числа обслуживаемых запросов от интенсивности поступления запросов на предоставление услуги.](image/11.png){#fig-11 width=90% fig-pos=H}
+
+![ввод данных вручную](image/12.png){#fig-12 width=90% fig-pos=H}
+
+
+![Cтационарное распределение вероятностей системы для всех n от 0 до C](image/13.png){#fig-13 width=90% fig-pos=H}
+
+![значения вероятностей блокировки ](image/14.png){#fig-14 width=90% fig-pos=H}
+
+![значение среднего числа заявоко](image/15.png){#fig-15 width=90% fig-pos=H}
+
+![график зависимости вероятности блокировки от интенсивности предложенной нагрузки, создаваемой запросами первого типа](image/16.png){#fig-16 width=90% fig-pos=H}
+
+![график зависимости среднего числа обслуживаемых запросов от интенсивности поступления запросов на предоставление услуги](image/17.png){#fig-17 width=90% fig-pos=H}
+
+
+# исходный код
+
+
+## lab02_task.py
+```python
+
+from math import factorial
+import matplotlib.pyplot as plt
+
+
+class IncompleteDualErlangModel:
+
+    def __init__(
+            self, 
+            Capacity:int, 
+            reservedCapacity:int, 
+            arrival_rate_1:float, 
+            arrival_rate_2:float, 
+            u:float
+            ):
+
+        self.Capacity = Capacity
+        self.reservedCapacity = reservedCapacity
+        self.arrival_rate_1 = arrival_rate_1
+        self.arrival_rate_2 = arrival_rate_2
+        self.u = u
+
+        self.rho1 = arrival_rate_1/u
+        self.rho2 = arrival_rate_2/u
+
+        self.calculate_P0()
+        self.calculateArrayOfProbabilities()
+
+        self.probabilityOfBlockingFirstType = self.arrayOfProbabilities[-1]
+        self.probabilityOfBlockingSecondType = sum( self.arrayOfProbabilities[reservedCapacity:])
+
+
+        self.averageRequestServerd =  sum( [x *y for x ,y in zip(range(0,self.Capacity+1), self.arrayOfProbabilities  ) ]   )
 
 
 
+    def calculate_P0(self):
+        self.P0 = 0
+        suma1 = 0 
+        suma2 = 0
+        for n in range(1,self.reservedCapacity+1):
+            suma1 = suma1+ ((self.rho1 + self.rho2 )**n)/ factorial(n)
 
+        for n in range(self.reservedCapacity+1,self.Capacity+1):
+            suma2 = suma2 + (((self.rho1 + self.rho2)**self.reservedCapacity * self.rho1**(n-self.reservedCapacity))/factorial(n))
+        
+        
+        self.P0= (1 + suma1 + suma2)**-1
+
+
+
+    def calculateArrayOfProbabilities(self):
+        
+        self.arrayOfProbabilities = []
+        self.arrayOfProbabilities.append(self.P0)
+        
+
+        for n in range(1,self.reservedCapacity+1):
+            self.arrayOfProbabilities.append(  
+                self.P0 * ((self.rho1 + self.rho2 )**n)/factorial(n) 
+            )
+
+        for n in range(self.reservedCapacity+1, self.Capacity+1):
+            self.arrayOfProbabilities.append( 
+                (self.P0 * ((self.rho1 + self.rho2)**self.reservedCapacity) * self.rho1**(n - self.reservedCapacity) )/ factorial(n)
+            )
+
+
+    def printTask2(self):
+        print(f"значение разпределения вероятностей")
+        for i in range(len(self.arrayOfProbabilities)):
+            print(f"P[{i}]: {self.arrayOfProbabilities[i]}")
+
+        print(f"значение вероятностей блокировка lambda1: {self.probabilityOfBlockingFirstType}")
+        print(f"значение вероятностей блокировка lambda2: {self.probabilityOfBlockingSecondType}")
+        print(f"значение среднего числа заявок: {self.averageRequestServerd}")                
+
+
+
+    def drawTask3(self):
+        y = []
+        for i in range(int(self.Capacity)):
+            model = IncompleteDualErlangModel(
+                self.Capacity, 
+                self.reservedCapacity, 
+                i, 
+                self.arrival_rate_2, 
+                self.u 
+                )
+            
+            y.append(model.probabilityOfBlockingFirstType)
+        
+        plt.figure(figsize=(10,5))
+        plt.bar(range(int(self.Capacity)), y)
+        plt.title("график зависимости вероятности блокировки от \n" \
+        "интенсивности предложенной нагрузки, создаваемой запросами первого типа")
+        plt.xlabel("интенсивность поступления запросов на предоставление услуги 1")
+        plt.ylabel("вероятность блокировки")
+        plt.show()
+
+    def drawTask4(self):
+        step = 1
+        y = []
+        for i in range(0,self.Capacity,step):
+            increment_factor = i/self.Capacity
+            model = IncompleteDualErlangModel(
+                self.Capacity, 
+                self.reservedCapacity, 
+                self.arrival_rate_1*increment_factor, 
+                self.arrival_rate_2*increment_factor, 
+                self.u 
+                )
+            
+            y.append(model.probabilityOfBlockingFirstType)
+        
+        plt.figure(figsize=(10,5))
+        plt.bar(range(len(y)), y)
+        plt.title("график зависимости среднего числа обслуживаемых запросов от \n" \
+        "интенсивности поступления запросов на предоставление услуги")
+        plt.xlabel("интенсивность поступления запросов на предоставление услуги 1")
+        plt.ylabel("вероятность блокировки")
+        plt.show()
+
+
+if __name__ == "__main__":
+    print("лабораторная работа №2")
+    print("Неполнодоступная двухсервисная модель Эрланга с одинаковыми")
+
+    print("введите переменные")
+
+    C = int(input("C: "))
+    g = int(input("g: "))
+    lambda1 = float(input("lambda1: "))
+    lambda2 = float(input("lambda2: "))
+    u = float(input("u: "))
+
+    model = IncompleteDualErlangModel( C, g, lambda1,  lambda2, u)
+    model.printTask2()
+    model.drawTask3()
+    model.drawTask4()
+
+```
+
+## test.py
+
+```python
+from lab02.work.lab02_task import IncompleteDualErlangModel
+
+C = 10
+g = 3
+lambda1 = 20
+lambda2 = 30
+mu = 0.5
+
+
+model = IncompleteDualErlangModel( C, g, lambda1, lambda2, mu)
+model.printTask2()
+model.drawTask3()
+model.drawTask4()
+
+
+
+```
 <!--  ![name](image/01.png){#fig-parametry width=90% fig-pos=H} -->
 
 
