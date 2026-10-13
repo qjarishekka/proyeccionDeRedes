@@ -16,7 +16,8 @@ class IncompleteDualErlangModel:
         self.calculateArrayOfProbabilities()
         self.probabilityOfBlockingFirstType = self.arrayOfProbabilities[-1]
         self.probabilityOfBlockingSecondType = sum( self.arrayOfProbabilities[reservedCapacity:])
-        self.averageRequestServerd =  sum( [x *y for x ,y in zip(range(0,self.Capacity), self.arrayOfProbabilities  ) ]   )
+        # La media usa todos los estados desde 0 hasta C: N = sum(n * p_n).
+        self.averageRequestServerd =  sum( [x *y for x ,y in zip(range(0,self.Capacity+1), self.arrayOfProbabilities  ) ]   )
 
 
 
@@ -30,9 +31,11 @@ class IncompleteDualErlangModel:
         for n in range(self.reservedCapacity+1,self.Capacity+1):
             suma2 = suma2 + (((self.rho1 + self.rho2)**self.reservedCapacity * self.rho1**(n-self.reservedCapacity))/factorial(n))
         
-        self.P0= (suma1 + suma2)**-1
+        # El 1 representa el estado vacío n = 0 en la constante de normalización.
+        self.P0= (1 + suma1 + suma2)**-1
 
     def calculateArrayOfProbabilities(self):
+        # La distribución debe contener todas las probabilidades: p_0, p_1, ..., p_C.
         self.arrayOfProbabilities = []
         self.arrayOfProbabilities.append(self.P0)
         
