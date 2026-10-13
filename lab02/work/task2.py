@@ -1,4 +1,5 @@
 from math import factorial
+import matplotlib.pyplot as plt
 
 class IncompleteDualErlangModel:
 
@@ -49,6 +50,56 @@ class IncompleteDualErlangModel:
             self.arrayOfProbabilities.append( 
                 (self.P0 * ((self.rho1 + self.rho2)**self.reservedCapacity) * self.rho1**(n - self.reservedCapacity) )/ factorial(n)
             )
+    def printTask2(self):
+        print(f"значение разпределения вероятностей")
+        for i in range(len(self.arrayOfProbabilities)):
+            print(f"P[{i}]: {self.arrayOfProbabilities[i]}")
+
+        print(f"значение вероятностей блокировка lambda1: {self.probabilityOfBlockingFirstType}")
+        print(f"значение вероятностей блокировка lambda2: {self.probabilityOfBlockingSecondType}")
+        print(f"значение среднего числа заявок: {self.averageRequestServerd}")                
+
+    def drawTask3(self):
+        y = []
+        for i in range(int(self.arrival_rate_1)):
+            model = IncompleteDualErlangModel(
+                self.Capacity, 
+                self.reservedCapacity, 
+                i, 
+                self.arrival_rate_2, 
+                self.u 
+                )
+            
+            y.append(model.probabilityOfBlockingFirstType)
+        
+        plt.figure(figsize=(10,5))
+        plt.bar(range(int(self.arrival_rate_1)), y)
+        plt.title("график зависимости вероятности блокировки от интенсивности предложенной нагрузки, создаваемой запросами первого типа")
+        plt.xlabel("интенсивность поступления запросов на предоставление услуги 1")
+        plt.ylabel("вероятность блокировки")
+        plt.show()
+
+    def drawTask4(self):
+        step = 5
+        y = []
+        for i in range(0,101,step):
+            increment_factor = i/100
+            model = IncompleteDualErlangModel(
+                self.Capacity, 
+                self.reservedCapacity, 
+                self.arrival_rate_1*increment_factor, 
+                self.arrival_rate_2*increment_factor, 
+                self.u 
+                )
+            
+            y.append(model.probabilityOfBlockingFirstType)
+        
+        plt.figure(figsize=(10,5))
+        plt.bar(range(len(y)), y)
+        plt.title("график зависимости вероятности блокировки от интенсивности предложенной нагрузки, создаваемой запросами первого типа")
+        plt.xlabel("интенсивность поступления запросов на предоставление услуги 1")
+        plt.ylabel("вероятность блокировки")
+        plt.show()
 
 
 if __name__ == "__main__":
@@ -63,4 +114,7 @@ if __name__ == "__main__":
     lambda2 = float(input("lambda2: "))
     u = float(input("u: "))
 
-    model = IncompleteDualErlangModel( 7,3, 20,  30,5)
+    model = IncompleteDualErlangModel( C, g, lambda1,  lambda2, u)
+    model.printTask2()
+    model.drawTask3()
+    model.drawTask4()
