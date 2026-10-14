@@ -1,4 +1,4 @@
-from lab02.work.lab02_task import IncompleteDualErlangModel
+from lab02_task import IncompleteDualErlangModel
 
 C = 10
 g = 3
