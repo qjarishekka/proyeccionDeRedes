@@ -110,7 +110,7 @@ class IncompleteDualErlangModel:
                 self.u 
                 )
             
-            y.append(model.probabilityOfBlockingFirstType)
+            y.append(model.averageRequestServerd)
         
         plt.figure(figsize=(10,5))
         plt.bar(range(len(y)), y)
