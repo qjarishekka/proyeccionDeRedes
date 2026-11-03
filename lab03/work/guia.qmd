@@ -1,0 +1,223 @@
+**Algoritmo del modelo de dos servicios con tráfico elástico**
+
+**1. Leer los datos de entrada**
+
+Introducir:
+
+- C: capacidad total de la celda.
+- λ₁ y λ₂: intensidades de llegada de solicitudes.
+- θ₁ y θ₂: tamaños medios de los archivos.
+
+Comprobar que C > 0, θ₁ > 0, θ₂ > 0 y que las intensidades de llegada sean no negativas.
+
+Utilizar unidades compatibles: por ejemplo, capacidad en bits/s, archivos en bits e intensidades en solicitudes/s.
+
+Aunque el enunciado menciona b₁ y b₂, estos parámetros no intervienen en las fórmulas del modelo presentado.
+
+**2. Calcular las cargas**
+
+Para cada tipo de solicitud, calcular la carga ofrecida:
+
+ρ₁ = λ₁ · θ₁
+
+ρ₂ = λ₂ · θ₂
+
+Calcular las cargas normalizadas:
+
+a₁ = ρ₁ / C
+
+a₂ = ρ₂ / C
+
+Calcular la carga normalizada total:
+
+a = a₁ + a₂
+
+**3. Comprobar la estabilidad**
+
+Comprobar que:
+
+a < 1
+
+Esto equivale a exigir:
+
+λ₁ · θ₁ + λ₂ · θ₂ < C
+
+Si no se cumple, detener el cálculo e indicar que no existe una distribución estacionaria normalizable.
+
+Esta condición se deduce de la suma de normalización del PDF. La condición individual ρᵢ < C que aparece en el documento resulta insuficiente por sí sola.
+
+**4. Definir los estados del sistema**
+
+Cada estado se representa mediante el par (n₁, n₂), donde:
+
+- n₁ es el número de solicitudes activas del primer tipo.
+- n₂ es el número de solicitudes activas del segundo tipo.
+
+Ambos números son enteros no negativos.
+
+El espacio de estados incluye todos esos pares, sin un máximo de solicitudes. El estado (0, 0) representa el sistema vacío.
+
+**5. Calcular la probabilidad del sistema vacío**
+
+La ecuación (11.7) define esta probabilidad como la inversa de la suma de todos los pesos de los estados.
+
+Al evaluar esa suma se obtiene:
+
+p(0, 0) = 1 − a
+
+Por tanto:
+
+p(0, 0) = 1 − a₁ − a₂
+
+**6. Establecer cuántos estados se mostrarán**
+
+Como existen infinitos estados, elegir una tolerancia ε para la probabilidad que se permite omitir. Por ejemplo:
+
+ε = 0,00000001
+
+Buscar un entero K ≥ 0 que cumpla:
+
+a elevado a (K + 1) ≤ ε
+
+Se mostrarán todos los estados con:
+
+n₁ + n₂ ≤ K
+
+La probabilidad total de los estados omitidos será exactamente a elevado a (K + 1).
+
+Si a = 0, utilizar K = 0: el único estado con probabilidad positiva es (0, 0).
+
+Este paso es una decisión numérica para presentar la distribución; no aparece explícitamente en el PDF.
+
+**7. Calcular las probabilidades de los estados**
+
+Según la ecuación (11.6):
+
+\[
+p(n_1,n_2)=
+(1-a)\,
+\frac{(n_1+n_2)!}{n_1!\,n_2!}\,
+a_1^{n_1}a_2^{n_2}.
+\]
+
+Para evitar factoriales grandes, realizar el cálculo mediante estas recurrencias:
+
+Primero, asignar:
+
+p(0, 0) = 1 − a
+
+Después, para cada n₂ desde 0 hasta K:
+
+- Si n₂ > 0, calcular p(0, n₂) = a₂ · p(0, n₂ − 1).
+- Para cada n₁ desde 1 hasta K − n₂, calcular:
+
+\[
+p(n_1,n_2)=
+a_1\,\frac{n_1+n_2}{n_1}\,
+p(n_1-1,n_2).
+\]
+
+Guardar cada estado y su probabilidad.
+
+Las recurrencias se deducen del balance parcial de la ecuación (11.5).
+
+**8. Comprobar la distribución calculada**
+
+Sumar las probabilidades de todos los estados mostrados.
+
+El resultado debe ser aproximadamente:
+
+1 − a elevado a (K + 1)
+
+Comprobar también que todas las probabilidades sean no negativas.
+
+No volver a normalizar la tabla truncada: la diferencia hasta 1 corresponde a los estados omitidos.
+
+**9. Calcular las probabilidades de bloqueo**
+
+Según la ecuación (11.8):
+
+E₁ = 0
+
+E₂ = 0
+
+El modelo admite todas las solicitudes y reparte la capacidad entre las que están activas.
+
+**10. Calcular el número medio de solicitudes**
+
+Calcular primero la capacidad disponible respecto de la carga ofrecida:
+
+D = C − λ₁ · θ₁ − λ₂ · θ₂
+
+Por la condición de estabilidad, D debe ser positivo.
+
+Calcular:
+
+N̄₁ = λ₁ · θ₁ / D
+
+N̄₂ = λ₂ · θ₂ / D
+
+El número medio total es:
+
+N̄ = N̄₁ + N̄₂
+
+Estas expresiones se obtienen calculando las esperanzas de la distribución (11.6)–(11.7).
+
+La ecuación (11.9) del original imprime un denominador diferente: λ₁ · θ₁ + λ₂ · θ₂. El algoritmo utiliza el denominador D para mantener la coherencia con la distribución estacionaria.
+
+**11. Calcular los tiempos medios de servicio**
+
+Aplicar la ecuación (11.10):
+
+T₁ = N̄₁ / λ₁
+
+T₂ = N̄₂ / λ₂
+
+Para intensidades de llegada positivas, esto equivale a:
+
+T₁ = θ₁ / D
+
+T₂ = θ₂ / D
+
+Si λᵢ = 0, no calcular N̄ᵢ / λᵢ porque produciría una división entre cero. Indicar que no llegan solicitudes de ese tipo. Si se presenta θᵢ / D, identificarlo como el tiempo límite de servicio para una solicitud de ese tipo.
+
+**12. Mostrar los resultados**
+
+Presentar:
+
+- Las cargas ofrecidas y normalizadas.
+- La probabilidad del sistema vacío.
+- La tabla de estados y sus probabilidades.
+- El límite K y la probabilidad omitida.
+- Las probabilidades de bloqueo de ambos tipos.
+- El número medio de solicitudes de cada tipo y el total.
+- El tiempo medio de servicio de cada tipo.
+
+**13. Construir las gráficas**
+
+Elegir una de las intensidades de llegada como variable y mantener constantes los demás datos.
+
+Para cada valor elegido:
+
+1. Calcular las cargas.
+2. Comprobar la estabilidad.
+3. Calcular los números medios de solicitudes.
+4. Calcular los tiempos medios de servicio.
+5. Guardar los resultados.
+
+Construir las gráficas solicitadas:
+
+- Tiempo medio de servicio frente a intensidad de llegada.
+- Número medio de solicitudes activas frente a intensidad de llegada.
+
+Identificar las curvas de los tipos 1 y 2.
+
+Si se varía λ₁, utilizar valores que cumplan:
+
+λ₁ < (C − λ₂ · θ₂) / θ₁
+
+Si se varía λ₂, utilizar valores que cumplan:
+
+λ₂ < (C − λ₁ · θ₁) / θ₂
+
+Excluir el límite de estabilidad: al acercarse a él, los tiempos y los números medios crecen sin límite.
