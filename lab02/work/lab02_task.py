@@ -90,7 +90,7 @@ class IncompleteDualErlangModel:
             y.append(model.probabilityOfBlockingFirstType)
         
         plt.figure(figsize=(10,5))
-        plt.bar(range(int(self.Capacity)), y)
+        plt.plot(range(int(self.Capacity)), y)
         plt.title("график зависимости вероятности блокировки от \n" \
         "интенсивности предложенной нагрузки, создаваемой запросами первого типа")
         plt.xlabel("интенсивность поступления запросов на предоставление услуги 1")
@@ -137,3 +137,5 @@ if __name__ == "__main__":
     model.printTask2()
     model.drawTask3()
     model.drawTask4()
+
+    print(sum(model.arrayOfProbabilities))

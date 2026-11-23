@@ -16,11 +16,6 @@ class Model:
         self.a = self.a1 + self.a2
 
         
-        if self.a < 1:
-            if not silent:
-                print("The system is stable")
-        else:
-            raise Exception("The system is unstable")
 
         from math import factorial
 
@@ -93,10 +88,10 @@ def grafic_task3(C , lambda2, theta1, theta2):
 
 
     ancho = 0.4
-    plt.bar([x - ancho / 2 for x in lambdas],
-            [t[0] for t in avg_time], width=ancho, label="T1")
-    plt.bar([x + ancho / 2 for x in lambdas],
-            [t[1] for t in avg_time], width=ancho, label="T2")
+    plt.plot(lambdas,
+            [t[0] for t in avg_time], label="T1")
+    plt.plot(lambdas,
+            [t[1] for t in avg_time],  label="T2")
     plt.xlabel("Интенсивность поступления запросов λ₁")
     plt.ylabel("Среднее время обслуживания запроса")
     plt.title("Зависимость среднего времени обслуживания от λ₁ (устойчивый режим)")
@@ -120,10 +115,10 @@ def grafic_task4(C , lambda2, theta1, theta2):
 
 
     ancho = 0.4
-    plt.bar([x - ancho / 2 for x in lambdas],
-            [t[0] for t in avg_time], width=ancho, label="N1")
-    plt.bar([x + ancho / 2 for x in lambdas],
-            [t[1] for t in avg_time], width=ancho, label="N2")
+    plt.plot(lambdas,
+            [t[0] for t in avg_time], label="N1")
+    plt.plot(lambdas,
+            [t[1] for t in avg_time], label="N2")
     plt.xlabel("Интенсивность поступления запросов λ₁")
     plt.ylabel("среднего числа обслуживаемых запросов")
     plt.title("Зависимость среднего числа обслуживаемых запросов от λ₁ (устойчивый режим)")
