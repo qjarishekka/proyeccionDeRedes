@@ -45,6 +45,9 @@ execute:
 
 ```
 
+
+
+
 # Численный анализ
 
 <!--  ![name](image/01.png){#fig-parametry width=90% fig-pos=H} -->
