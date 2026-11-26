@@ -1,0 +1,90 @@
+% Diagrama simbolico: las coordenadas solo organizan el dibujo.
+% No fijan valores numericos de C, g, n_1 ni n_2.
+\begin{tikzpicture}[
+  >=stealth,
+  font=\fontsize{9}{10.5}\selectfont,
+  state/.style={draw, rectangle, fill=white, inner sep=2.4pt,
+                minimum height=0.48cm, font=\fontsize{9}{10.5}\selectfont},
+  every edge/.style={draw, ->, line width=0.45pt},
+  every label/.style={font=\fontsize{7}{8.4}\selectfont}
+]
+  % Guia geometrica de la frontera de capacidad; no es una transicion.
+  \draw[gray!45, densely dashed, line width=0.35pt]
+    (0,10.5) -- (13.2,6.9);
+  % Pares de transiciones: llegada y finalizacion de servicio.
+  \newcommand{\horizontalpair}[5][0.5]{%
+    \path (#2) edge[bend left=35] node[pos=#1, above, font=\fontsize{7}{8.4}\selectfont] {$#4$} (#3);
+    \path (#3) edge[bend left=35] node[pos={1-#1}, below, font=\fontsize{7}{8.4}\selectfont] {$#5$} (#2);
+  }
+  \newcommand{\verticalpair}[5][0.5]{%
+    \path (#2) edge[bend left=35] node[pos=#1, left, font=\fontsize{7}{8.4}\selectfont] {$#4$} (#3);
+    \path (#3) edge[bend left=35] node[pos={1-#1}, right, font=\fontsize{7}{8.4}\selectfont] {$#5$} (#2);
+  }
+
+  % Borde inferior: n_2 = 0.
+  \node[state] (o)  at (0,0)    {$(0,0)$};
+  \node[state] (a)  at (1.5,0)  {$(1,0)$};
+  \node[state] (bm) at (4.5,0)  {$(n_1-1,0)$};
+  \node[state] (b)  at (6.5,0)  {$(n_1,0)$};
+  \node[state] (bp) at (8.5,0)  {$(n_1+1,0)$};
+  \node[state] (gm) at (11.5,0) {$(g-1,0)$};
+  \node[state] (g)  at (13.2,0) {$(g,0)$};
+  \node at (3,0) {$\cdots$};
+  \node at (10,0) {$\cdots$};
+  \horizontalpair[0.8]{o}{a}{\lambda_1}{\mu_1}
+  \horizontalpair{bm}{b}{\lambda_1}{n_1\mu_1}
+  \horizontalpair{b}{bp}{\lambda_1}{(n_1+1)\mu_1}
+  \horizontalpair[0.25]{gm}{g}{\lambda_1}{g\mu_1}
+
+  % Borde izquierdo: n_1 = 0.
+  \node[state] (lone) at (0,1.3) {$(0,1)$};
+  \node at (0,2.15) {$\vdots$};
+  \node[state] (lm) at (0,3.1) {$(0,n_2-1)$};
+  \node[state] (l)  at (0,4.5) {$(0,n_2)$};
+  \node[state] (lp) at (0,5.9) {$(0,n_2+1)$};
+  \node at (0,8.2) {$\vdots$};
+  \node[state] (top) at (0,10.5) {$(0,C)$};
+  \verticalpair[0.8]{o}{lone}{\lambda_2}{\mu_2}
+  \verticalpair{lm}{l}{\lambda_2}{n_2\mu_2}
+  \verticalpair{l}{lp}{\lambda_2}{(n_2+1)\mu_2}
+
+  % Estado interior: las cuatro transiciones son posibles.
+  \node[state] (c)  at (6.5,4.5) {$(n_1,n_2)$};
+  \node[state] (cl) at (4.5,4.5) {$(n_1-1,n_2)$};
+  \node[state] (cr) at (8.5,4.5) {$(n_1+1,n_2)$};
+  \node[state] (cd) at (6.5,3.1) {$(n_1,n_2-1)$};
+  \node[state] (cu) at (6.5,5.9) {$(n_1,n_2+1)$};
+  \horizontalpair[0.25]{cl}{c}{\lambda_1}{n_1\mu_1}
+  \horizontalpair[0.75]{c}{cr}{\lambda_1}{(n_1+1)\mu_1}
+  \verticalpair[0.25]{cd}{c}{\lambda_2}{n_2\mu_2}
+  \verticalpair[0.75]{c}{cu}{\lambda_2}{(n_2+1)\mu_2}
+  \node at (3,4.5) {$\cdots$};
+  \node at (9.7,4.5) {$\cdots$};
+  \node at (6.5,1.9) {$\vdots$};
+
+  % Borde derecho: n_1 = g; no hay llegadas admitidas del tipo 1.
+  \node[state] (rone) at (13.2,1.3) {$(g,1)$};
+  \node at (13.2,2.15) {$\vdots$};
+  \node[state] (rm) at (13.2,3.1) {$(g,n_2-1)$};
+  \node[state] (r)  at (13.2,4.5) {$(g,n_2)$};
+  \node[state] (rl) at (10.8,4.5) {$(g-1,n_2)$};
+  \node[state] (rp) at (13.2,5.9) {$(g,n_2+1)$};
+  \node at (13.2,6.4) {$\vdots$};
+  \node[state] (corner) at (13.2,6.9) {$(g,C-g)$};
+  \verticalpair[0.8]{g}{rone}{\lambda_2}{\mu_2}
+  \horizontalpair[0.25]{rl}{r}{\lambda_1}{g\mu_1}
+  \verticalpair{rm}{r}{\lambda_2}{n_2\mu_2}
+  \verticalpair{r}{rp}{\lambda_2}{(n_2+1)\mu_2}
+
+  % Frontera superior: un estado lleno y sus dos vecinos interiores.
+  \node[state] (full) at (6.5,8.72727) {$(n_1,C-n_1)$};
+  \node[state] (fl) at (4.0,8.72727) {$(n_1-1,C-n_1)$};
+  \node[state] (fd) at (6.5,7.22727) {$(n_1,C-n_1-1)$};
+  \horizontalpair[0.25]{fl}{full}{\lambda_1}{n_1\mu_1}
+  \verticalpair{fd}{full}{\lambda_2}{(C-n_1)\mu_2}
+  \node[fill=white, inner sep=1pt] at (2.0,9.95455) {$\ddots$};
+  \node[fill=white, inner sep=1pt] at (9.8,7.82727) {$\ddots$};
+  \node at (6.5,6.55) {$\vdots$};
+  \node[rotate=-15.26, font=\fontsize{9}{10.5}\selectfont]
+    at (10.2,8.35) {$n_1+n_2=C$};
+\end{tikzpicture}

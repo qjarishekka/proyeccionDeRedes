@@ -1,0 +1,186 @@
+<div id="erlang-seminario">
+  <style>
+    #erlang-seminario { color:var(--foreground); }
+    #erlang-seminario .er-space { margin-block:16px; }
+    #erlang-seminario .er-key { display:inline-flex; align-items:center; gap:6px; }
+    #erlang-seminario .er-dot { width:10px; height:10px; display:inline-block; border-radius:50%; background:var(--viz-series-1); }
+    #erlang-seminario .er-dot.two { background:var(--viz-series-2); }
+    #erlang-seminario .er-channels { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin-block:16px; }
+    #erlang-seminario .er-channel { display:flex; align-items:center; flex-direction:column; gap:8px; }
+    #erlang-seminario .er-slot { min-height:58px; width:100%; display:flex; justify-content:center; align-items:center; background:var(--muted); color:var(--foreground); }
+    #erlang-seminario .er-slot[data-kind="1"] { background:color-mix(in srgb,var(--viz-series-1) 17%,transparent); }
+    #erlang-seminario .er-slot[data-kind="2"] { background:color-mix(in srgb,var(--viz-series-2) 17%,transparent); }
+    #erlang-seminario .er-token { display:flex; align-items:center; gap:7px; }
+    #erlang-seminario .er-map { position:relative; width:100%; height:338px; }
+    #erlang-seminario .er-map svg { display:block; width:100%; height:100%; overflow:visible; }
+    #erlang-seminario .er-map svg text { fill:var(--foreground); }
+    #erlang-seminario .er-node { position:absolute; transform:translate(-50%,-50%); text-align:center; }
+    #erlang-seminario .er-percent { margin-top:3px; color:var(--foreground); }
+    #erlang-seminario .er-axis { margin-block:8px; }
+    #erlang-seminario .er-marker { position:absolute; width:10px; height:10px; margin-left:-5px; margin-top:-34px; background:var(--foreground); border-radius:50%; pointer-events:none; transition:left .45s ease,top .45s ease; }
+    #erlang-seminario .er-status { min-height:42px; display:flex; align-items:center; }
+    #erlang-seminario .er-mode { margin-top:14px; }
+    #erlang-seminario .er-mode[hidden], #erlang-seminario [hidden] { display:none; }
+    #erlang-seminario .er-small-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px 20px; }
+    #erlang-seminario .er-number { font-weight:500; }
+    #erlang-seminario .er-weight { height:16px; background:var(--muted); margin-block:10px; }
+    #erlang-seminario .er-weight span { height:100%; display:block; background:var(--viz-series-1); transition:width .45s ease; }
+    #erlang-seminario .er-map-label { color:var(--muted-foreground); }
+    #erlang-seminario .er-reading { min-height:40px; }
+    @media (prefers-reduced-motion:reduce) { #erlang-seminario .er-marker, #erlang-seminario .er-weight span { transition:none; } }
+  </style>
+  <h3>Modelo del seminario · 3 canales compartidos</h3>
+  <div class="viz-row er-space" role="group" aria-label="Etapas de la explicación">
+    <button type="button" class="btn btn-primary" data-mode="states" aria-pressed="true">1. Estados</button>
+    <button type="button" class="btn" data-mode="rates" aria-pressed="false">2. Flechas</button>
+    <button type="button" class="btn" data-mode="prob" aria-pressed="false">3. Probabilidades</button>
+    <button type="button" class="btn" data-mode="balance" aria-pressed="false">4. Balance</button>
+  </div>
+  <div class="viz-row er-space"><span class="er-key"><span class="er-dot"></span>Tipo 1</span><span class="er-key"><span class="er-dot two"></span>Tipo 2</span><span id="er-state" class="tabular-nums er-number"></span></div>
+  <div class="er-channels" id="er-channels" role="img" aria-label="Ocupación de los tres canales"></div>
+  <div class="viz-row" id="er-events" aria-label="Cambiar las solicitudes">
+    <button type="button" class="btn" data-event="a1">Llega tipo 1</button>
+    <button type="button" class="btn" data-event="a2">Llega tipo 2</button>
+    <button type="button" class="btn" data-event="d1">Termina tipo 1</button>
+    <button type="button" class="btn" data-event="d2">Termina tipo 2</button>
+    <button type="button" class="btn" id="er-sequence">Ver una secuencia</button>
+  </div>
+  <div id="er-status" class="er-status text-small" aria-live="polite">Estado inicial: una solicitud de cada tipo.</div>
+  <div class="viz-row er-axis"><span>Mapa de estados X</span><span class="text-small er-map-label">Derecha: más tipo 1 · Arriba: más tipo 2</span></div>
+  <div id="er-map" class="er-map" role="group" aria-label="Diez estados posibles. Selecciona una pareja para cambiar el estado.">
+    <svg id="er-arrows" role="img" aria-label="Transiciones posibles entre estados"></svg>
+    <div id="er-marker" class="er-marker"></div>
+  </div>
+  <div class="er-mode" data-panel="states">
+    <div class="er-small-grid tabular-nums">
+      <div>n₁ · Activas del tipo 1: <span id="er-n1" class="er-number"></span></div>
+      <div>n₂ · Activas del tipo 2: <span id="er-n2" class="er-number"></span></div>
+      <div>Ocupados: <span id="er-total" class="er-number"></span> de 3</div>
+      <div>Libres: <span id="er-free" class="er-number"></span></div>
+    </div>
+  </div>
+  <div class="er-mode" data-panel="rates" hidden>
+    <table class="table table-sm tabular-nums"><thead><tr><th>Evento posible</th><th>Intensidad</th></tr></thead><tbody id="er-rates"></tbody></table>
+    <div class="text-small">Llegadas: 1 por minuto de cada tipo. Servicio individual: tipo 1, 2 por minuto; tipo 2, 1 por minuto.</div>
+  </div>
+  <div class="er-mode" data-panel="prob" hidden>
+    <table class="table table-sm tabular-nums"><thead><tr><th>Parte del cálculo</th><th class="text-end">Valor</th></tr></thead><tbody id="er-prob"></tbody></table>
+    <div class="er-weight" role="progressbar" aria-label="Probabilidad del estado seleccionado" aria-valuemin="0" aria-valuemax="100" id="er-prog"><span id="er-prog-fill"></span></div>
+    <div class="viz-row"><span id="er-prob-percent" class="tabular-nums er-number"></span><span class="text-small">Porcentaje de tiempo a largo plazo</span></div>
+  </div>
+  <div class="er-mode" data-panel="balance" hidden>
+    <table class="table table-sm tabular-nums"><thead><tr><th>Flujo del estado seleccionado</th><th class="text-end">Probabilidad/min</th></tr></thead><tbody id="er-balance"></tbody></table>
+    <div class="text-small" id="er-balance-p"></div>
+  </div>
+  <script>
+  (() => {
+    const root = document.getElementById('erlang-seminario');
+    const $ = id => root.querySelector('#'+id);
+    const board=$('er-map'), svg=$('er-arrows'), marker=$('er-marker');
+    const capacity=3, lambda=[1,1], mu=[2,1], rho=[.5,1];
+    const states=[]; const factorial=n=>n<2?1:n*factorial(n-1);
+    for(let n2=0;n2<=capacity;n2++) for(let n1=0;n1<=capacity-n2;n1++) states.push({n1,n2});
+    const weight=(a,b)=>rho[0]**a*rho[1]**b/(factorial(a)*factorial(b));
+    const normalizer=states.reduce((s,v)=>s+weight(v.n1,v.n2),0);
+    const probability=(a,b)=>weight(a,b)/normalizer;
+    const fmt=(v,d=5)=>v.toLocaleString('es-PE',{maximumFractionDigits:d});
+    const fmtP=v=>(100*v).toLocaleString('es-PE',{maximumFractionDigits:2})+' %';
+    let n1=1,n2=1,mode='states',sequenceTimer=null,sequenceIndex=0;
+    const seq=['a1','a2','d1','a2','a2','d2','d1','d2'];
+    let channels=[1,2,0]; let positions=new Map();
+    const key=(a,b)=>a+','+b;
+    const steps={a1:[1,0],a2:[0,1],d1:[-1,0],d2:[0,-1]};
+    const nodeEls=new Map();
+    const svgns='http://www.w3.org/2000/svg';
+    const reduced=()=>window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const make=(tag,attrs)=>{const el=document.createElementNS(svgns,tag);for(const [k,v] of Object.entries(attrs))el.setAttribute(k,v);return el;};
+    function stopSequence(){if(sequenceTimer!==null)clearTimeout(sequenceTimer);sequenceTimer=null;$('er-sequence').textContent='Ver una secuencia';}
+    function setStatus(text){$('er-status').textContent=text;}
+    function valid(a,b){return a>=0&&b>=0&&a+b<=capacity;}
+    function outgoing(a,b){
+      const list=[];
+      if(a+b<capacity){list.push({event:'Llega tipo 1',a:a+1,b,rate:lambda[0],kind:1});list.push({event:'Llega tipo 2',a,b:b+1,rate:lambda[1],kind:2});}
+      if(a>0)list.push({event:'Termina tipo 1',a:a-1,b,rate:a*mu[0],kind:1});
+      if(b>0)list.push({event:'Termina tipo 2',a,b:b-1,rate:b*mu[1],kind:2});
+      return list;
+    }
+    for(const st of states){
+      const wrap=document.createElement('div');wrap.className='er-node';
+      const button=document.createElement('button');button.type='button';button.className='btn';button.textContent='('+st.n1+', '+st.n2+')';
+      button.setAttribute('aria-label',st.n1+' solicitudes del tipo 1 y '+st.n2+' del tipo 2');
+      const pct=document.createElement('div');pct.className='er-percent text-small tabular-nums';pct.textContent=fmtP(probability(st.n1,st.n2));pct.hidden=true;
+      wrap.append(button,pct);board.append(wrap);nodeEls.set(key(st.n1,st.n2),{wrap,button,pct});
+      button.addEventListener('click',()=>{stopSequence();n1=st.n1;n2=st.n2;channels=[...Array(n1).fill(1),...Array(n2).fill(2),...Array(capacity-n1-n2).fill(0)];update();setStatus('Estado seleccionado: ('+n1+', '+n2+').');});
+    }
+    function moveArrow(x0,y0,x1,y1,kind,label){
+      const dx=x1-x0,dy=y1-y0,len=Math.hypot(dx,dy),ux=dx/len,uy=dy/len;
+      const start={x:x0+ux*35,y:y0+uy*27},end={x:x1-ux*35,y:y1-uy*27};
+      const color='var(--viz-series-'+kind+')';
+      svg.append(make('line',{x1:start.x,y1:start.y,x2:end.x,y2:end.y,stroke:color,'stroke-width':2,'marker-end':'url(#er-head-'+kind+')'}));
+      const horizontal=Math.abs(dx)>Math.abs(dy);
+      const t=make('text',{x:(x0+x1)/2+(horizontal?0:16),y:(y0+y1)/2+(horizontal?-9:4),'text-anchor':horizontal?'middle':'start'});t.textContent=label;svg.append(t);
+    }
+    function draw(){
+      const w=board.clientWidth;const left=40,right=w-40,top=38,dy=82;
+      svg.setAttribute('viewBox','0 0 '+w+' 338');svg.replaceChildren();positions.clear();
+      const defs=make('defs',{});
+      for(const k of [1,2]){const m=make('marker',{id:'er-head-'+k,viewBox:'0 0 10 10',refX:9,refY:5,markerWidth:6,markerHeight:6,orient:'auto-start-reverse'});m.append(make('path',{d:'M 0 0 L 10 5 L 0 10 z',fill:'var(--viz-series-'+k+')'}));defs.append(m);}svg.append(defs);
+      for(const st of states){const x=left+(right-left)*st.n1/3,y=top+(3-st.n2)*dy;positions.set(key(st.n1,st.n2),{x,y});const el=nodeEls.get(key(st.n1,st.n2));el.wrap.style.left=x+'px';el.wrap.style.top=y+'px';}
+      for(const st of states){const p=positions.get(key(st.n1,st.n2));for(const delta of [[1,0],[0,1]]){const a=st.n1+delta[0],b=st.n2+delta[1];if(!valid(a,b))continue;const q=positions.get(key(a,b));svg.append(make('line',{x1:p.x,y1:p.y,x2:q.x,y2:q.y,stroke:'var(--border)','stroke-width':1}));}}
+      const p=positions.get(key(n1,n2));
+      if(mode==='rates'||mode==='balance')for(const event of outgoing(n1,n2)){const q=positions.get(key(event.a,event.b));moveArrow(p.x,p.y,q.x,q.y,event.kind,fmt(event.rate));}
+      marker.style.left=p.x+'px';marker.style.top=p.y+'px';
+    }
+    function renderChannels(animatedIndex=-1){
+      $('er-channels').replaceChildren();
+      channels.forEach((kind,index)=>{const container=document.createElement('div');container.className='er-channel';const name=document.createElement('div');name.className='text-small';name.textContent='Canal '+(index+1);const slot=document.createElement('div');slot.className='er-slot';slot.dataset.kind=kind;const token=document.createElement('div');token.className='er-token';if(kind){const dot=document.createElement('span');dot.className='er-dot'+(kind===2?' two':'');token.append(dot);}const label=document.createElement('span');label.textContent=kind?'Tipo '+kind:'Libre';token.append(label);slot.append(token);container.append(name,slot);$('er-channels').append(container);if(index===animatedIndex&&!reduced())token.animate([{transform:'translateY(-22px) scale(.7)'},{transform:'translateY(0) scale(1)'}],{duration:450,easing:'ease-out'});});
+      $('er-channels').setAttribute('aria-label',n1+' solicitudes del tipo 1, '+n2+' del tipo 2 y '+(capacity-n1-n2)+' canales libres');
+    }
+    function update(animatedIndex=-1){
+      $('er-state').textContent='Estado ('+n1+', '+n2+')';
+      $('er-n1').textContent=n1;$('er-n2').textContent=n2;$('er-total').textContent=n1+n2;$('er-free').textContent=capacity-n1-n2;
+      for(const st of states){const el=nodeEls.get(key(st.n1,st.n2));el.button.setAttribute('aria-pressed',String(st.n1===n1&&st.n2===n2));el.pct.hidden=mode!=='prob';}
+      renderChannels(animatedIndex);
+      root.querySelector('[data-event="d1"]').disabled=n1===0;root.querySelector('[data-event="d2"]').disabled=n2===0;
+      const rateList=outgoing(n1,n2);
+      $('er-rates').innerHTML=rateList.map(v=>'<tr><td>'+v.event+'</td><td>'+fmt(v.rate)+' por minuto</td></tr>').join('');
+      const p=probability(n1,n2),w=weight(n1,n2);
+      const rows=[['Carga del tipo 1',fmt(rho[0])],['Carga del tipo 2',fmt(rho[1])],['Potencia del tipo 1 · exponente '+n1,fmt(rho[0]**n1)],['Potencia del tipo 2 · exponente '+n2,fmt(rho[1]**n2)],['Factorial de '+n1+' · tipo 1',fmt(factorial(n1))],['Factorial de '+n2+' · tipo 2',fmt(factorial(n2))],['Peso del estado',fmt(w)],['Suma de los 10 pesos',fmt(normalizer)],['Probabilidad del estado',fmt(p)]];
+      $('er-prob').innerHTML=rows.map(([a,b])=>'<tr><td>'+a+'</td><td class="text-end">'+b+'</td></tr>').join('');
+      $('er-prog').setAttribute('aria-valuenow',(p*100).toFixed(4));$('er-prog-fill').style.width=p*100+'%';$('er-prob-percent').textContent=fmtP(p);
+      const flowOut=rateList.reduce((sum,v)=>sum+p*v.rate,0);
+      let flowIn=0;
+      for(const st of states)for(const event of outgoing(st.n1,st.n2))if(event.a===n1&&event.b===n2)flowIn+=probability(st.n1,st.n2)*event.rate;
+      $('er-balance').innerHTML='<tr><td>Entrada total</td><td class="text-end">'+fmt(flowIn,6)+'</td></tr><tr><td>Salida total</td><td class="text-end">'+fmt(flowOut,6)+'</td></tr>';
+      $('er-balance-p').textContent='Probabilidad de este estado: '+fmtP(p);
+      draw();
+    }
+    function eventAction(code,automatic=false){
+      if(!automatic)stopSequence();const [a,b]=steps[code],old='('+n1+', '+n2+')';
+      if(!valid(n1+a,n2+b)){setStatus(code[0]==='a'?'Solicitud rechazada: los 3 canales están ocupados. El estado no cambia.':'No hay solicitudes de ese tipo para terminar.');if(!reduced())$('er-channels').animate([{transform:'translateX(0)'},{transform:'translateX(6px)'},{transform:'translateX(-6px)'},{transform:'translateX(0)'}],{duration:300});return;}
+      const kind=Number(code[1]);let index=code[0]==='a'?channels.indexOf(0):channels.indexOf(kind);
+      channels[index]=code[0]==='a'?kind:0;n1+=a;n2+=b;update(index);
+      setStatus((code[0]==='a'?'Llega':'Termina')+' tipo '+kind+': '+old+' → ('+n1+', '+n2+').');
+    }
+    root.querySelectorAll('[data-event]').forEach(button=>button.addEventListener('click',()=>eventAction(button.dataset.event)));
+    root.querySelectorAll('[data-mode]').forEach(button=>button.addEventListener('click',()=>{
+      stopSequence();mode=button.dataset.mode;
+      root.querySelectorAll('[data-mode]').forEach(b=>{const active=b===button;b.setAttribute('aria-pressed',String(active));b.classList.toggle('btn-primary',active);});
+      root.querySelectorAll('[data-panel]').forEach(p=>p.hidden=p.dataset.panel!==mode);
+      $('er-events').hidden=mode==='prob'||mode==='balance';
+      $('er-channels').hidden=mode==='prob'||mode==='balance';
+      update();setStatus(mode==='states'?'Estado seleccionado: ('+n1+', '+n2+').':mode==='rates'?'Flechas desde ('+n1+', '+n2+'): la etiqueta es una intensidad por minuto.':mode==='prob'?'Selecciona una pareja para ver su peso y su probabilidad.':'Selecciona una pareja para comparar los flujos estacionarios.');
+    }));
+    $('er-sequence').addEventListener('click',()=>{
+      if(sequenceTimer!==null){stopSequence();return;}
+      n1=1;n2=1;channels=[1,2,0];sequenceIndex=0;update();$('er-sequence').textContent='Detener secuencia';
+      const tick=()=>{if(sequenceIndex>=seq.length){stopSequence();return;}eventAction(seq[sequenceIndex++],true);sequenceTimer=setTimeout(tick,1500);};
+      sequenceTimer=setTimeout(tick,500);
+    });
+    new ResizeObserver(draw).observe(board);
+    // Exact checks against the worked example of the seminar.
+    if(Math.abs(normalizer-201/48)>1e-12||Math.abs(probability(1,1)-24/201)>1e-12)throw Error('Invalid stationary distribution');
+    update();
+  })();
+  </script>
+</div>

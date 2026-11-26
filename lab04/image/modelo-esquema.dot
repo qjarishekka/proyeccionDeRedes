@@ -1,0 +1,28 @@
+digraph Modelo {
+  graph [rankdir=TB, bgcolor="white", pad="0.22", nodesep="0.45",
+         ranksep="0.55", splines=ortho, outputorder=edgesfirst];
+  node [shape=box, style="rounded,filled", fontname="Arial", fontsize=15,
+        color="#64748b", fillcolor="#f8fafc", fontcolor="#172b45",
+        penwidth=1.2, margin="0.20,0.15"];
+  edge [color="#64748b", penwidth=1.4, arrowsize=0.75];
+
+  tipo1 [label="Тип 1 · λ₁\nПоток Пуассона", fillcolor="#eff6ff", color="#6085b5"];
+  tipo2 [label="Тип 2 · λ₂\nПоток Пуассона", fillcolor="#eff6ff", color="#6085b5"];
+  control [label="Контроль\nприёма", fillcolor="#e8eef5", penwidth=1.5];
+  compartidos [label="g общих каналов\nОбслуживание типов 1 и 2"];
+  reservados [label="C − g зарезервированных каналов\nОбслуживание только типа 2"];
+  salida [label="Обслуживание\nзавершено", fillcolor="#eff7f2", color="#6f9480"];
+  rechazo [label="Отклонённая заявка\nНет свободного разрешённого канала", fillcolor="#fff4ef", color="#bc8d76"];
+
+  { rank=same; tipo1; tipo2; }
+  { rank=same; control; rechazo; }
+  { rank=same; compartidos; reservados; }
+
+  tipo1 -> control;
+  tipo2 -> control;
+  control -> compartidos;
+  control -> reservados;
+  compartidos -> salida;
+  reservados -> salida;
+  control -> rechazo [constraint=false];
+}
